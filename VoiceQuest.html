@@ -196,4 +196,503 @@
             background: #2a2a35;
         }
         .option-btn.correct {
-            background: rgba(57, 255, 20, 0
+            background: rgba(57, 255, 20, 0.2) !important;
+            border-color: var(--correct-green) !important;
+            color: var(--correct-green);
+            font-weight: bold;
+        }
+        .option-btn.incorrect {
+            background: rgba(255, 49, 49, 0.2) !important;
+            border-color: var(--incorrect-red) !important;
+            color: var(--incorrect-red);
+        }
+
+        /* Feedback Display */
+        .feedback-banner {
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            min-height: 30px;
+        }
+        .feedback-banner.correct { color: var(--correct-green); }
+        .feedback-banner.incorrect { color: var(--incorrect-red); }
+
+        /* Dubbing Widget */
+        .dubbing-panel {
+            background: #1a1a20;
+            border: 1px dashed var(--accent-neon);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .mic-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #25252b;
+            border: 2px solid var(--text-muted);
+            color: var(--text-light);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        .mic-btn.recording {
+            background: var(--incorrect-red);
+            border-color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,49,49,0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255,49,49,0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,49,49,0); }
+        }
+        .dub-feedback {
+            color: #e0e0e0;
+            font-style: italic;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+
+        /* Navigation block */
+        .nav-panel {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        /* --- SCREEN: ENDING --- */
+        #ending-screen {
+            text-align: center;
+            padding: 20px;
+        }
+        .final-score-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--accent-neon);
+            margin: 20px 0;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+        .evaluation-msg {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="curtain-layer" id="curtain-left"></div>
+    <div class="curtain-layer" id="curtain-right"></div>
+
+    <div class="container">
+        
+        <div id="welcome-screen">
+            <h1>VoiceQuest</h1>
+            <p class="intro-text">
+                Welcome to VoiceQuest! Lights. Camera. Action. Welcome future voice actors! Today, your mission is to bring scenes to life using the power of intonation.
+            </p>
+            <button class="btn" id="start-btn">Start Mission</button>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <div class="hud">
+                <div>Scene: <span id="scene-number">1</span> / 12</div>
+                <div>Score: <span id="hud-score" class="hud-score">0</span></div>
+            </div>
+
+            <div class="studio-layout">
+                <div id="listening-section">
+                    <h3>Part 1: Listen to the Line</h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 10px;">Listen carefully to the voice context below and determine the emotion or intonation type.</p>
+                    
+                    <div class="media-box" id="audio-container">
+                        <audio id="audio-player" controls src=""></audio>
+                    </div>
+
+                    <div class="options-grid" id="options-container">
+                        </div>
+                </div>
+
+                <div id="reveal-section" class="hidden">
+                    <hr style="border-color: #333; margin: 20px 0;">
+                    <h3>Part 2: Original Scene Context</h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 10px;">Watch the real scene video to confirm the environment, facial expressions, and body language.</p>
+                    
+                    <div class="media-box">
+                        <video id="video-player" controls src=""></video>
+                    </div>
+                </div>
+
+                <div id="dubbing-section" class="hidden">
+                    <hr style="border-color: #333; margin: 20px 0;">
+                    <div class="dubbing-panel">
+                        <h3>Part 3: Match the Intonation!</h3>
+                        <p style="font-size: 0.95rem; margin-bottom: 15px;">Tap the microphone, say the line matching the character's voice style, and listen to yourself back!</p>
+                        
+                        <div>
+                            <button class="mic-btn" id="mic-button" title="Record Voice">🎤</button>
+                        </div>
+                        <div id="recording-status" style="font-size: 0.9rem; color: var(--text-muted);">Click to start recording</div>
+                        
+                        <audio id="dub-playback" controls class="hidden" style="margin-top:15px;"></audio>
+                        <div class="dub-feedback" id="dub-feedback-msg"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feedback-banner" id="emotion-feedback"></div>
+
+            <div class="nav-panel">
+                <button class="btn hidden" id="next-btn">Next Scene &rarr;</button>
+            </div>
+        </div>
+
+        <div id="ending-screen" class="hidden">
+            <h1>Wrap Up!</h1>
+            <p>You have wrapped up production on all 12 scenes! Let's check your studio stats:</p>
+            <div class="final-score-display"><span id="final-score">0</span> / 120</div>
+            <div class="evaluation-msg" id="final-evaluation"></div>
+            <button class="btn" id="replay-btn">Play Again</button>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- CONFIGURABLE QUESTION ASSETS ---
+           To modify questions, source assets, or correct designations, update the array records below.
+        */
+        const voiceQuestData = [
+            {
+                id: 1,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3", 
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4", 
+                options: ["Excited", "Angry", "Sarcastic", "Scared"],
+                correctAnswer: "Excited"
+            },
+            {
+                id: 2,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Sad", "Confused", "Terrified", "Arrogant"],
+                correctAnswer: "Sad"
+            },
+            {
+                id: 3,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Surprised", "Bored", "Angry", "Anxious"],
+                correctAnswer: "Angry"
+            },
+            {
+                id: 4,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Proud", "Scared", "Sarcastic", "Disappointed"],
+                correctAnswer: "Scared"
+            },
+            {
+                id: 5,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Enthusiastic", "Bored", "Guilty", "Shy"],
+                correctAnswer: "Bored"
+            },
+            {
+                id: 6,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Surprised", "Relieved", "Aggressive", "Sad"],
+                correctAnswer: "Surprised"
+            },
+            {
+                id: 7,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Nervous", "Confident", "Disgusted", "Joking"],
+                correctAnswer: "Confident"
+            },
+            {
+                id: 8,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Nervous", "Furious", "Calm", "Exhausted"],
+                correctAnswer: "Nervous"
+            },
+            {
+                id: 9,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Ecstatic", "Sarcastic", "Sympathetic", "Panicked"],
+                correctAnswer: "Sarcastic"
+            },
+            {
+                id: 10,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Disappointed", "Curious", "Spooky", "Joyful"],
+                correctAnswer: "Disappointed"
+            },
+            {
+                id: 11,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Aggressive", "Relieved", "Suspicious", "Sleepy"],
+                correctAnswer: "Relieved"
+            },
+            {
+                id: 12,
+                audioSrc: "https://www.w3schools.com/tags/horse.mp3",
+                videoSrc: "https://www.w3schools.com/html/mov_bbb.mp4",
+                options: ["Shy", "Suspicious", "Enthusiastic", "Arrogant"],
+                correctAnswer: "Suspicious"
+            }
+        ];
+
+        /* --- POOLS OF POIGNANT VARIANT FEEDBACK --- */
+        const correctFeedbackPool = [
+            "You’re so cool!", "Amazing performance!", "That was spot on!", "You nailed it!",
+            "Brilliant deduction!", "Incredible ears!", "You have the gift!", "Hollywood is calling!",
+            "Perfect analysis!", "Magnificent work!", "Sensational!", "Top tier acting insight!"
+        ];
+
+        const incorrectFeedbackPool = [
+            "Uh oh! Better luck next time!", "Nice try!", "Not quite, keep going!", "You can do this!",
+            "Don't lose heart, keep listening!", "A minor setback, try the next scene!", "Close, but not it!", 
+            "Listen closely to the pitch next time!", "Keep your chin up!", "We will fix it in the next cut!",
+            "Practise makes perfect!", "Let's refine your focus on the next line!"
+        ];
+
+        const dubbingFeedbackPool = [
+            "You’re so close!",          
+            "You’re doing great!",       
+            "You’re so good at this!",   
+            "Spectacular adaptation!",   
+            "Oh no! Try again!"          
+        ];
+
+        /* --- APPLICATION STATE MANAGEMENT --- */
+        let currentQuestionIndex = 0;
+        let totalScore = 0;
+        let dubbingAttemptsThisScene = 0;
+        let isRecording = false;
+        
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        /* --- DOM ELEMENTS --- */
+        const bodyEl = document.body;
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endingScreen = document.getElementById('ending-screen');
+        
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const replayBtn = document.getElementById('replay-btn');
+        const micButton = document.getElementById('mic-button');
+
+        const sceneNumDisplay = document.getElementById('scene-number');
+        const hudScoreDisplay = document.getElementById('hud-score');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const finalEvaluationDisplay = document.getElementById('final-evaluation');
+
+        const audioPlayer = document.getElementById('audio-player');
+        const videoPlayer = document.getElementById('video-player');
+        const optionsContainer = document.getElementById('options-container');
+        const emotionFeedback = document.getElementById('emotion-feedback');
+        
+        const revealSection = document.getElementById('reveal-section');
+        const dubbingSection = document.getElementById('dubbing-section');
+        const recordingStatus = document.getElementById('recording-status');
+        const dubPlayback = document.getElementById('dub-playback');
+        const dubFeedbackMsg = document.getElementById('dub-feedback-msg');
+
+        /* --- INTERACTION EVENT LISTENERS --- */
+        startBtn.addEventListener('click', startGame);
+        nextBtn.addEventListener('click', moveToNextScene);
+        replayBtn.addEventListener('click', resetGame);
+        micButton.addEventListener('click', handleMicrophoneToggle);
+
+        /* --- CORE GAMEPLAY ENGINE --- */
+        function startGame() {
+            bodyEl.classList.add('game-started');
+            setTimeout(() => {
+                welcomeScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                loadScene(currentQuestionIndex);
+            }, 600);
+        }
+
+        function loadScene(index) {
+            optionsContainer.innerHTML = '';
+            emotionFeedback.textContent = '';
+            emotionFeedback.className = 'feedback-banner';
+            
+            revealSection.classList.add('hidden');
+            dubbingSection.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            
+            dubPlayback.classList.add('hidden');
+            dubPlayback.src = '';
+            dubFeedbackMsg.textContent = '';
+            dubbingAttemptsThisScene = 0;
+            
+            audioPlayer.pause();
+            videoPlayer.pause();
+
+            const currentScene = voiceQuestData[index];
+            sceneNumDisplay.textContent = index + 1;
+            
+            audioPlayer.src = currentScene.audioSrc;
+            videoPlayer.src = currentScene.videoSrc;
+            audioPlayer.load();
+            videoPlayer.load();
+
+            currentScene.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option;
+                button.addEventListener('click', () => evaluateChoice(button, option, currentScene.correctAnswer));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function evaluateChoice(selectedButton, selectedValue, correctValue) {
+            const allButtons = optionsContainer.querySelectorAll('.option-btn');
+            allButtons.forEach(btn => btn.disabled = true);
+            
+            audioPlayer.pause();
+
+            if (selectedValue === correctValue) {
+                totalScore += 10;
+                hudScoreDisplay.textContent = totalScore;
+                selectedButton.classList.add('correct');
+                emotionFeedback.textContent = correctFeedbackPool[currentQuestionIndex % correctFeedbackPool.length];
+                emotionFeedback.className = "feedback-banner correct";
+            } else {
+                selectedButton.classList.add('incorrect');
+                allButtons.forEach(btn => {
+                    if (btn.textContent === correctValue) {
+                        btn.classList.add('correct');
+                    }
+                });
+                emotionFeedback.textContent = incorrectFeedbackPool[currentQuestionIndex % incorrectFeedbackPool.length];
+                emotionFeedback.className = "feedback-banner incorrect";
+            }
+
+            revealSection.classList.remove('hidden');
+            dubbingSection.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            
+            videoPlayer.play().catch(() => {});
+        }
+
+        function moveToNextScene() {
+            stopRecordingSession();
+            currentQuestionIndex++;
+            if (currentQuestionIndex < voiceQuestData.length) {
+                loadScene(currentQuestionIndex);
+            } else {
+                showEndingScreen();
+            }
+        }
+
+        function showEndingScreen() {
+            gameScreen.classList.add('hidden');
+            endingScreen.classList.remove('hidden');
+            finalScoreDisplay.textContent = totalScore;
+
+            if (totalScore >= 100) {
+                finalEvaluationDisplay.textContent = "Incredible! You are ready for prime-time cinema! Perfect delivery execution.";
+            } else if (totalScore >= 70) {
+                finalEvaluationDisplay.textContent = "Great work! You have dynamic ranges and understand contextual clues perfectly.";
+            } else {
+                finalEvaluationDisplay.textContent = "Good try! Vocal intonation takes training. Practice again to find your perfect rhythm!";
+            }
+        }
+
+        function resetGame() {
+            currentQuestionIndex = 0;
+            totalScore = 0;
+            hudScoreDisplay.textContent = "0";
+            endingScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            loadScene(currentQuestionIndex);
+        }
+
+        /* --- NATIVE AUDIO RECORDING SYSTEM --- */
+        async function handleMicrophoneToggle() {
+            if (!isRecording) {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    recordingStatus.textContent = "Microphone API not supported on this browser.";
+                    return;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        dubPlayback.src = audioUrl;
+                        dubPlayback.classList.remove('hidden');
+                        
+                        dubbingAttemptsThisScene++;
+                        displayDubbingFeedback(dubbingAttemptsThisScene);
+                        
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    micButton.classList.add('recording');
+                    recordingStatus.textContent = "Recording... Speak now! Tap mic again to stop.";
+
+                } catch (err) {
+                    console.error("Microphone capture failure:", err);
+                    recordingStatus.textContent = "Microphone access denied. Enable permissions.";
+                    dubFeedbackMsg.textContent = dubbingFeedbackPool[4];
+                }
+            } else {
+                stopRecordingSession();
+            }
+        }
+
+        function stopRecordingSession() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                micButton.classList.remove('recording');
+                recordingStatus.textContent = "Recording saved! Play it back below.";
+            }
+        }
+
+        function displayDubbingFeedback(attemptIndex) {
+            let userFeedback = "";
+            if (attemptIndex === 1) {
+                userFeedback = dubbingFeedbackPool[0];
+            } else if (attemptIndex === 2) {
+                userFeedback = dubbingFeedbackPool[1];
+            } else if (attemptIndex === 3) {
+                userFeedback = dubbingFeedbackPool[2];
+            } else {
+                userFeedback = dubbingFeedbackPool[3];
+            }
+            dubFeedbackMsg.textContent = userFeedback;
+        }
+    </script>
+</body>
+</html>
